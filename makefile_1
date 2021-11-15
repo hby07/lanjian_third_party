@@ -1,0 +1,56 @@
+# step1-->代码检查，环境检查
+# step2-->构建镜像
+# step3-->清除构建镜像留下的缓存等信息
+# step4-->上传镜像
+# step5-->启动容器
+#
+# 要判断是开发环境还是生产环境
+
+PROJECT="lanjian_third_party"
+VERSION="1.0"
+ENV=
+THIS_FILE=$(lastword $(MAKEFILE_LIST))
+MOD_FILE=
+
+default:help
+
+test:
+	echo $(DEV)
+
+help:
+	@echo "\nChoose a command run in server:\n"
+	@echo "build	Build go executer"
+	@echo "image	Build a docker image"
+check:
+	@echo "step1---------------\n检查运行环境"
+	@echo "检查是否有go.mod"
+ifeq (go.mod,$(wildcard go.mod))
+	@expo MOD_FILE = "exist"
+	@echo $(MOD_FILE)
+# 调用其他target,实质是使用$(MAKE)调用新的makefile
+# @$(MAKE) -f $(THIS_FILE) help
+endif
+	@echo "检查运行环境"
+ifeq ($(ENV),dev)
+	@echo "当前为开发环境"
+else ifeq ($(ENV),prod)
+	@echo "当前为生产环境"
+else
+	@echo "请指定ENV参数,可选值[dev,prod]"
+endif
+	@echo ""	
+	@echo "---------------检查完毕"
+build: check
+	@echo "step2---------------\n构建docker镜像"
+	
+	
+clean:
+	@echo "step3---------------\n清除剩余缓存"
+	@docker build 
+push:
+	@echo "step4---------------\n上传镜像"
+
+run:
+	@echo "step5---------------\n启动"
+
+.PHONY: help check build clean push run test

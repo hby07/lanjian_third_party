@@ -1,0 +1,30 @@
+.PHONY: all build buildstatic buildstatic-in-docker build-dockerfile deps deps-in-docker build-docker-image test help
+
+# docker image name for output
+IMAGE_NAME=lanjian_third_party
+# path of project relative to $GOPATH/src
+SRC_PATH=/opt/lanjian
+
+THIS_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+# vendor not used
+VENDOR_DIR=$(THIS_DIR)/vendor
+# get image tag from gitlab's CI_BUILD_REF_NAME env
+IMAGE_VERSION=$(shell echo $${CI_BUILD_REF_NAME:=master}|sed 's/\//./')
+UID = $(shell id -u)
+GID = $(shell id -g)
+USER = $(shell echo $${USER:=someuser})
+SSH_PATH= $(shell if [ ! -z $$CI ]; then echo $$PWD/ssh; else echo $$HOME/.ssh; fi)
+# All the .go files, excluding vendor/
+GO_FILES=$(shell find . -iname '*.go' -type f | grep -v /vendor/ |grep -v ".gen.go"| grep -v ".pb.go")
+# Whatever docker image you want to use as builder
+BUILDER_IMAGE_NAME=goprotobuild
+GO_PACKAGES=$(shell go list ./... | grep -v /vendor/)
+
+define docker-run=
+	make build-dockerfile
+	docker run -rm -i \
+		-v $$PWD:/go/src/$(SRC_PATH) \
+		-v $(SSH_PATH):$$HOME/.ssh \
+		-u $(UID):$(GID) \
+		-v /etc/passwd:/etc/passwd:ro \
+		-v /etc/group:/etc/group:ro
